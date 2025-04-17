@@ -1,26 +1,57 @@
-<!doctype html>
-<html lang="en" dir="ltr" class="hydrated">
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Example Capacitor App</title>
-    <meta
-      name="viewport"
-      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Universal Music Player Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background: #007AFF;
+        color: white;
+        cursor: pointer;
+        min-width: 80px;
+      }
+      button:disabled {
+        background: #ccc;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+    </style>
   </head>
   <body>
-    <main>
-      <h1>Capacitor Test Plugin Project</h1>
-      <p>
-        This project can be used to test out the functionality of your plugin. Nothing in the
-        <em>example-app/</em> folder will be published to npm when using this template, so you can create away!
-      </p>
-      <label for="echoInput">Echo Text:</label>
-      <input type="text" id="echoInput" name="echoInput" value="Hello World!" />
-      <button onclick="testEcho()">Click Me!</button>
-    </main>
+    <h1>Universal Music Player Test</h1>
+    
+    <div class="controls">
+      <input type="text" id="urlInput" placeholder="Enter audio URL" style="flex-grow: 1; padding: 10px;" />
+      <button id="playBtn">Play</button>
+      <button id="pauseBtn">Pause</button>
+      <button id="stopBtn">Stop</button>
+    </div>
 
-    <script src="./js/example.js" type="module"></script>
+    <div class="status">
+      <p>Status: <span id="statusText">Ready</span></p>
+      <p>Current Time: <span id="currentTime">0</span>s</p>
+      <p>Duration: <span id="duration">0</span>s</p>
+    </div>
+
+    <script type="module" src="./index.ts"></script>
   </body>
 </html>
