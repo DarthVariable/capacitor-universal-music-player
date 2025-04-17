@@ -8,44 +8,84 @@ const stopBtn = document.getElementById('stopBtn') as HTMLButtonElement;
 const statusText = document.getElementById('statusText') as HTMLSpanElement;
 const currentTimeText = document.getElementById('currentTime') as HTMLSpanElement;
 const durationText = document.getElementById('duration') as HTMLSpanElement;
+const seekSlider = document.getElementById('seekSlider') as HTMLInputElement;
+
+// Get icon elements
+const playIcon = playBtn.querySelector('i') as HTMLElement;
 
 // Track player state
 let isNewTrack = true;
 let currentUrl: string | null = null;
+let isDraggingSlider = false;
+let currentDuration = 0;
+
+// Format time in seconds to MM:SS
+function formatTime(seconds: number): string {
+  if (!isFinite(seconds) || seconds < 0) return '0:00';
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
 
 // Initialize buttons
 function setInitialButtonStates() {
-  playBtn.textContent = 'Play';
+  playIcon.className = 'fas fa-play';
   playBtn.disabled = false;
   pauseBtn.disabled = true;
   stopBtn.disabled = true;
+  seekSlider.value = '0';
+  seekSlider.disabled = true;
   isNewTrack = true;
 }
 
 function setPlayingButtonStates() {
-  playBtn.textContent = 'Resume';
+  playIcon.className = 'fas fa-play';
   playBtn.disabled = true;
   pauseBtn.disabled = false;
   stopBtn.disabled = false;
+  seekSlider.disabled = false;
 }
 
 function setPausedButtonStates() {
-  playBtn.textContent = 'Resume';
+  playIcon.className = 'fas fa-play';
   playBtn.disabled = false;
   pauseBtn.disabled = true;
   stopBtn.disabled = false;
+  seekSlider.disabled = false;
 }
 
 function setStoppedButtonStates() {
-  playBtn.textContent = 'Play';
+  playIcon.className = 'fas fa-play';
   playBtn.disabled = false;
   pauseBtn.disabled = true;
   stopBtn.disabled = true;
+  seekSlider.value = '0';
+  seekSlider.disabled = true;
   isNewTrack = true;
 }
 
 // Set initial states
 setInitialButtonStates();
+
+// Handle slider events
+seekSlider.addEventListener('mousedown', () => {
+  isDraggingSlider = true;
+});
+
+seekSlider.addEventListener('mouseup', async () => {
+  isDraggingSlider = false;
+  if (currentDuration > 0) {
+    const seekTime = (parseFloat(seekSlider.value) / 100) * currentDuration;
+    await UniversalMusicPlayer.seekTo({ seconds: seekTime });
+  }
+});
+
+seekSlider.addEventListener('input', () => {
+  if (currentDuration > 0) {
+    const seekTime = (parseFloat(seekSlider.value) / 100) * currentDuration;
+    currentTimeText.textContent = formatTime(seekTime);
+  }
+});
 
 // Set up event listeners
 playBtn.addEventListener('click', async () => {
@@ -97,6 +137,9 @@ stopBtn.addEventListener('click', async () => {
     statusText.textContent = 'Stopped';
     setStoppedButtonStates();
     currentUrl = null;
+    currentDuration = 0;
+    currentTimeText.textContent = '0:00';
+    durationText.textContent = '0:00';
   } catch (error) {
     console.error('Error stopping:', error);
     statusText.textContent = 'Error stopping';
@@ -105,8 +148,13 @@ stopBtn.addEventListener('click', async () => {
 
 // Set up progress listener
 UniversalMusicPlayer.onProgress((data) => {
-  currentTimeText.textContent = data.currentTime.toFixed(2);
-  durationText.textContent = data.duration.toFixed(2);
+  currentDuration = data.duration;
+  if (!isDraggingSlider) {
+    const progress = (data.currentTime / data.duration) * 100;
+    seekSlider.value = progress.toString();
+    currentTimeText.textContent = formatTime(data.currentTime);
+    durationText.textContent = formatTime(data.duration);
+  }
 });
 
 // Periodically check playing status
@@ -117,6 +165,7 @@ setInterval(async () => {
       statusText.textContent = 'Stopped';
       setStoppedButtonStates();
       currentUrl = null;
+      currentDuration = 0;
     }
   } catch (error) {
     console.error('Error checking status:', error);
