@@ -1,24 +1,12 @@
 import Foundation
 import Capacitor
 
+/**
+ * Please read the Capacitor iOS Plugin Development Guide
+ * here: https://capacitorjs.com/docs/plugins/ios
+ */
 @objc(UniversalMusicPlayerPlugin)
-public class UniversalMusicPlayerPlugin: CAPPlugin, CAPBridgedPlugin {
-    public let identifier = "UniversalMusicPlayerPlugin"
-    public let jsName = "UniversalMusicPlayer"
-
-    public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "play", returnType: .none),
-        CAPPluginMethod(name: "pause", returnType: .none),
-        CAPPluginMethod(name: "resume", returnType: .none),
-        CAPPluginMethod(name: "stop", returnType: .none),
-        CAPPluginMethod(name: "isPlaying", returnType: .promise),
-        CAPPluginMethod(name: "getCurrentTime", returnType: .promise),
-        CAPPluginMethod(name: "getDuration", returnType: .promise),
-        CAPPluginMethod(name: "seekTo", returnType: .none),
-        CAPPluginMethod(name: "loop", returnType: .none),
-        CAPPluginMethod(name: "onProgress", returnType: .none),
-    ]
-
+public class UniversalMusicPlayerPlugin: CAPPlugin {
     private let implementation = UniversalMusicPlayer()
 
     @objc func play(_ call: CAPPluginCall) {
@@ -52,12 +40,12 @@ public class UniversalMusicPlayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func getCurrentTime(_ call: CAPPluginCall) {
         let time = implementation.getCurrentTime()
-        call.resolve(["seconds": time])
+        call.resolve(["seconds": time / 1000.0])
     }
 
     @objc func getDuration(_ call: CAPPluginCall) {
         let duration = implementation.getDuration()
-        call.resolve(["seconds": duration])
+        call.resolve(["seconds": duration / 1000.0])
     }
 
     @objc func seekTo(_ call: CAPPluginCall) {
@@ -65,13 +53,13 @@ public class UniversalMusicPlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Must provide seconds")
             return
         }
-        implementation.seekTo(seconds: seconds)
+        implementation.seekTo(seconds: seconds * 1000)
         call.resolve()
     }
 
     @objc func loop(_ call: CAPPluginCall) {
-        guard let shouldLoop = call.getBool("shouldLoop") else {
-            call.reject("Must provide shouldLoop boolean")
+        guard let shouldLoop = call.getBool("enabled") else {
+            call.reject("Must provide enabled boolean")
             return
         }
         implementation.loop(shouldLoop: shouldLoop)
@@ -79,12 +67,25 @@ public class UniversalMusicPlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func onProgress(_ call: CAPPluginCall) {
-        implementation.onProgress { [weak self] currentTime, duration in
-            self?.notifyListeners("progress", data: [
-                "currentTime": currentTime,
-                "duration": duration
-            ])
+        implementation.setProgressUpdateListener { [weak self] currentTime, duration in
+            let progressData: [String: Any] = [
+                "currentTime": currentTime / 1000.0,
+                "duration": duration / 1000.0
+            ]
+            self?.notifyListeners("progress", data: progressData)
         }
-        call.resolve()
+        call.keepAlive = true
     }
+
+    // Optional: Add load() method if needed for specific initialization
+    // public override func load() {
+    //     // Initialization code here
+    // }
+
+    // Optional: Add handleOnDestroy() if specific cleanup beyond the
+    // implementation's release is needed
+    // deinit {
+    //    // Perform cleanup if necessary, though implementation.releasePlayer()
+    //    // in UniversalMusicPlayer should handle most things.
+    // }
 } 
